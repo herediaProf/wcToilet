@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Controle de Banheiro - Gestão de Aula</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+  </head>
+  <body
+    class="bg-gray-100 font-sans min-h-screen flex flex-col"
+    x-data="{ 
+          tempoAula: 3000, /* 50 minutos em segundos */
+          init() {
+              setInterval(() => { if (this.tempoAula > 0) this.tempoAula--; }, 1000);
+          }
+      }"
+  >
+    <header
+      class="bg-slate-800 text-white shadow-md px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4"
+    >
+      <div>
+        <h1 class="text-xl font-bold tracking-wide">
+          🚾 Gestão de Saídas — Sala de Aula
+        </h1>
+        <p class="text-xs text-slate-400">
+          Painel de Monitoramento Estatístico
+        </p>
+      </div>
+
+      <div
+        class="bg-slate-700 px-4 py-2 rounded-lg border border-slate-600 text-center"
+      >
+        <span
+          class="text-xs text-slate-400 block font-medium uppercase tracking-wider"
+          >Tempo Restante de Aula</span
+        >
+        <span
+          class="text-xl font-mono font-bold text-amber-400"
+          x-text="String(Math.floor(tempoAula / 60)).padStart(2, '0') + ':' + String(tempoAula % 60).padStart(2, '0')"
+        >
+        </span>
+      </div>
+    </header>
+
+    <main
+      class="flex-1 p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto w-full"
+    >
+      <section
+        class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col justify-between min-h-[350px]"
+      >
+        <div>
+          <h2
+            class="text-base font-bold text-gray-700 border-b pb-2 uppercase tracking-wider"
+          >
+            🟢 Status do Banheiro
+          </h2>
+
+          {% if aluno_no_banheiro %}
+          <div
+            class="mt-8 text-center"
+            x-data="{ 
+                         tempoRestante: 180, /* 3 minutos em segundos */
+                         init() {
+                             setInterval(() => { this.tempoRestante--; }, 1000);
+                         }
+                     }"
+          >
+            <p
+              class="text-xs font-semibold uppercase tracking-wider text-blue-600"
+            >
+              Alunos em Trânsito
+            </p>
+            <h3 class="text-2xl font-bold text-gray-900 mt-1">
+              {{ aluno_no_banheiro.nome }}
+            </h3>
+            <p class="text-xs text-gray-500">
+              Nº {{ aluno_no_banheiro.numero_chamada }} • RA: {{
+              aluno_no_banheiro.ra }}
+            </p>
+
+            <div
+              class="mt-6 text-5xl font-mono font-black tracking-tighter"
+              :class="tempoRestante < 0 ? 'text-red-600 animate-pulse' : 'text-emerald-600'"
+            >
+              <span x-text="tempoRestante < 0 ? '-' : ''"></span>
+              <span
+                x-text="String(Math.abs(Math.floor(tempoRestante / 60))).padStart(2, '0')"
+              ></span
+              >:
+              <span
+                x-text="String(Math.abs(tempoRestante % 60)).padStart(2, '0')"
+              ></span>
+            </div>
+
+            <span
+              x-show="tempoRestante < 0"
+              class="inline-block mt-2 px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full uppercase tracking-wide"
+            >
+              Tempo Limite Excedido!
+            </span>
+          </div>
+          {% else %}
+          <div class="mt-12 text-center py-8">
+            <div class="text-5xl mb-3">🧼</div>
+            <h3
+              class="text-lg font-bold text-emerald-600 uppercase tracking-wide"
+            >
+              Banheiro Disponível
+            </h3>
+            <p class="text-xs text-gray-400 max-w-[200px] mx-auto mt-1">
+              Nenhum aluno fora da sala no momento.
+            </p>
+          </div>
+          {% endif %}
+        </div>
+
+        {% if aluno_no_banheiro %}
+        <div class="mt-6 border-t pt-4">
+          <a
+            href="{% url 'registrar_retorno' aluno_no_banheiro.id %}"
+            class="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-sm transition duration-150"
+          >
+            Confirmar Retorno à Sala
+          </a>
+        </div>
+        {% endif %}
+      </section>
+
+      <section
+        class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col"
+      >
+        <h2
+          class="text-base font-bold text-gray-700 border-b pb-2 uppercase tracking-wider flex justify-between items-center"
+        >
+          <span>⏳ Fila de Espera</span>
+          <span
+            class="bg-slate-200 text-slate-800 text-xs px-2.5 py-0.5 rounded-full font-bold"
+            >{{ fila_espera.count }}</span
+          >
+        </h2>
+
+        <div class="flex-1 overflow-y-auto mt-4 space-y-2 max-h-[400px] pr-1">
+          {% for aluno in fila_espera %}
+          <div
+            class="flex justify-between items-center p-3 bg-amber-50 border border-amber-200 rounded-lg shadow-2xs"
+          >
+            <div>
+              <span
+                class="inline-block text-xs font-bold text-amber-800 bg-amber-200 rounded px-1.5 py-0.5 mr-2"
+              >
+                {{ forloop.counter }}º
+              </span>
+              <span class="font-semibold text-gray-800 text-sm"
+                >{{ aluno.nome }}</span
+              >
+            </div>
+            <span class="text-xs font-mono text-gray-400">
+              pede às {{ aluno.data_entrada_fila|date:"H:i" }}
+            </span>
+          </div>
+          {% empty %}
+          <div class="text-center py-12 text-gray-400 text-sm italic">
+            Nenhum aluno aguardando na fila.
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section
+        class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col"
+      >
+        <h2
+          class="text-base font-bold text-gray-700 border-b pb-2 uppercase tracking-wider"
+        >
+          👥 Lista de Chamada
+        </h2>
+
+        <div class="flex-1 overflow-y-auto mt-4 space-y-1.5 max-h-[450px] pr-1">
+          {% for aluno in alunos_em_sala %}
+          <div
+            class="flex justify-between items-center p-2.5 hover:bg-slate-50 rounded-lg border border-gray-100 transition duration-75"
+          >
+            <div class="flex items-center gap-3">
+              <span
+                class="font-mono text-xs font-bold text-gray-400 w-5 text-right"
+                >{{ aluno.numero_chamada }}</span
+              >
+              <span
+                class="text-sm font-medium text-gray-700 truncate max-w-[180px] md:max-w-[220px]"
+                >{{ aluno.nome }}</span
+              >
+            </div>
+
+            <a
+              href="{% url 'pedir_para_sair' aluno.id %}"
+              class="bg-slate-100 hover:bg-indigo-600 hover:text-white text-indigo-600 font-bold text-xs py-1.5 px-3 rounded-md transition duration-150 border border-transparent hover:border-indigo-700"
+            >
+              Solicitar Saída
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+    </main>
+
+    <footer
+      class="bg-white border-t border-gray-200 px-6 py-4 mt-auto flex justify-center gap-4"
+    >
+      <a
+        href="{% url 'relatorio_analitico' %}"
+        class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs px-5 py-2.5 rounded-lg border border-indigo-200 transition duration-150"
+      >
+        📊 Ver Gráficos e Métricas
+      </a>
+      <a
+        href="{% url 'exportar_excel' %}"
+        class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-xs px-5 py-2.5 rounded-lg border border-emerald-200 transition duration-150"
+      >
+        📥 Exportar para Excel (.XLSX)
+      </a>
+    </footer>
+  </body>
+</html>

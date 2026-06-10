@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Relatório Analítico de Saídas</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body class="bg-gray-100 p-6 min-h-screen">
+    <div
+      class="max-w-4xl mx-auto bg-white rounded-xl shadow-md border border-gray-200 p-6"
+    >
+      <div class="flex justify-between items-center border-b pb-4 mb-6">
+        <div>
+          <h1 class="text-xl font-bold text-gray-800">
+            📊 Análise de Frequência de Saídas
+          </h1>
+          <p class="text-xs text-gray-500">
+            Métricas acumuladas para conselho de classe e tutoria
+          </p>
+        </div>
+        <a
+          href="{% url 'dashboard' %}"
+          class="bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs py-2 px-4 rounded-lg"
+        >
+          Voltar ao Painel
+        </a>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr
+              class="bg-slate-50 border-b border-gray-200 text-slate-700 text-xs uppercase font-bold"
+            >
+              <th class="p-3">Nº</th>
+              <th class="p-3">Nome do Aluno</th>
+              <th class="p-3 text-center">Total de Saídas</th>
+              <th class="p-3 text-center">Tempo Total Fora (Min)</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 text-sm text-gray-700">
+            {% for item in ranking_saidas %}
+            <tr class="hover:bg-slate-50">
+              <td class="p-3 font-mono font-bold text-gray-400">
+                {{ item.numero_chamada }}
+              </td>
+              <td class="p-3 font-medium text-gray-900">{{ item.nome }}</td>
+              <td class="p-3 text-center font-bold text-blue-600">
+                {{ item.total_saidas }}
+              </td>
+              <td
+                class="p-3 text-center font-mono {% if item.tempo_total > 15 %}text-red-600 font-bold{% endif %}"
+              >
+                {{ item.tempo_total|default:0 }} min
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-center py-8 text-gray-400 italic">
+                Nenhum registo computado até ao momento.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,1 @@
+web: python manage.py migrate && python manage.py importar_alunos && gunicorn setup.wsgi:application --bind 0.0.0.0:$PORT
