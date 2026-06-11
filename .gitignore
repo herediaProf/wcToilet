@@ -1,0 +1,22 @@
+# Ambiente Virtual (Crucial ignorar!)
+.venv/
+venv/
+ENV/
+env/
+
+# Arquivos compilados do Python
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Banco de dados local de teste (se houver)
+*.sqlite3
+
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db
+
+# Configurações do VS Code ou IDEs
+.vscode/
+.idea/
