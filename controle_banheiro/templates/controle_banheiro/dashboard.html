@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-br">
   <head>
     <meta charset="UTF-8" />
@@ -22,21 +22,50 @@
     <header
       class="bg-slate-800 text-white shadow-md px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4"
     >
-      <div>
-        <h1 class="text-xl font-bold tracking-wide">
-          🚾 Gestão de Saídas — Sala de Aula
-        </h1>
-        <p class="text-xs text-slate-400">
-          Painel de Monitoramento Estatístico
-        </p>
+      <div class="flex items-center justify-between w-full md:w-auto gap-4">
+        <div>
+          <h1 class="text-xl font-bold tracking-wide">
+            🚾 Gestão de Saídas — Sala de Aula
+          </h1>
+          <p class="text-xs text-slate-400">
+            Painel de Monitoramento Estatístico
+          </p>
+        </div>
+      </div>
+
+      <!-- Barra Intermediária: Filtro de Escola/Turma integrado ao Header -->
+      <div class="w-full md:w-auto min-w-[280px]">
+        <form method="GET" action="{% url 'dashboard' %}" id="filtro-turma-form">
+          <label for="turma_id" class="block text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">Escola / Turma Atual</label>
+          <div class="flex gap-2">
+            <select 
+              name="turma_id" 
+              id="turma_id" 
+              class="w-full bg-slate-700 text-white text-sm rounded-lg border border-slate-600 p-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              onchange="document.getElementById('filtro-turma-form').submit()"
+            >
+              <option value="">-- Todas as Turmas --</option>
+              {% for turma in turmas %}
+                <option value="{{ turma.id }}" {% if turma_selecionada == turma.id|stringformat:"s" %}selected{% endif %}>
+                  {{ turma.escola.nome }} - {{ turma.nome_turma }}
+                </option>
+              {% endfor %}
+            </select>
+            {% if turma_selecionada %}
+              <a href="{% url 'dashboard' %}" class="bg-slate-600 hover:bg-slate-500 text-white px-2.5 py-2 rounded-lg text-sm flex items-center justify-center transition" title="Limpar Filtro">
+                ✕
+              </a>
+            {% endif %}
+          </div>
+        </form>
       </div>
 
       <div
-        class="bg-slate-700 px-4 py-2 rounded-lg border border-slate-600 text-center"
+        class="bg-slate-700 px-4 py-2 rounded-lg border border-slate-600 text-center min-w-[140px]"
       >
         <span
           class="text-xs text-slate-400 block font-medium uppercase tracking-wider"
-          >Tempo Restante de Aula</span
+          >Tempo Restante</span
         >
         <span
           class="text-xl font-mono font-bold text-amber-400"
@@ -49,6 +78,7 @@
     <main
       class="flex-1 p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto w-full"
     >
+      <!-- STATUS DO BANHEIRO -->
       <section
         class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col justify-between min-h-[350px]"
       >
@@ -60,26 +90,34 @@
           </h2>
 
           {% if aluno_no_banheiro %}
+          <!-- Captura o timestamp de saída real vindo do banco de dados -->
           <div
             class="mt-8 text-center"
             x-data="{ 
-                         tempoRestante: 180, /* 3 minutos em segundos */
+                         tempoRestante: 180,
                          init() {
+                             const horaSaidaRaw = this.$el.getAttribute('data-saida');
+                             if (horaSaidaRaw) {
+                                 const horaSaida = new Date(horaSaidaRaw);
+                                 const agora = new Date();
+                                 const segundosPassados = Math.floor((agora - horaSaida) / 1000);
+                                 this.tempoRestante = 180 - segundosPassados;
+                             }
                              setInterval(() => { this.tempoRestante--; }, 1000);
                          }
                      }"
+            data-saida="{{ registro_atual.hora_saida|date:'c' }}"
           >
             <p
               class="text-xs font-semibold uppercase tracking-wider text-blue-600"
             >
-              Alunos em Trânsito
+              Aluno em Trânsito
             </p>
             <h3 class="text-2xl font-bold text-gray-900 mt-1">
               {{ aluno_no_banheiro.nome }}
             </h3>
             <p class="text-xs text-gray-500">
-              Nº {{ aluno_no_banheiro.numero_chamada }} • RA: {{
-              aluno_no_banheiro.ra }}
+              Nº {{ aluno_no_banheiro.numero_chamada }} • {{ aluno_no_banheiro.turma.nome_turma }}
             </p>
 
             <div
@@ -130,6 +168,7 @@
         {% endif %}
       </section>
 
+      <!-- FILA DE ESPERA -->
       <section
         class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col"
       >
@@ -157,6 +196,7 @@
               <span class="font-semibold text-gray-800 text-sm"
                 >{{ aluno.nome }}</span
               >
+              <small class="text-slate-400 block text-[10px]">{{ aluno.turma.nome_turma }}</small>
             </div>
             <span class="text-xs font-mono text-gray-400">
               pede às {{ aluno.data_entrada_fila|date:"H:i" }}
@@ -170,13 +210,17 @@
         </div>
       </section>
 
+      <!-- LISTA DE CHAMADA -->
       <section
         class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col"
       >
         <h2
-          class="text-base font-bold text-gray-700 border-b pb-2 uppercase tracking-wider"
+          class="text-base font-bold text-gray-700 border-b pb-2 uppercase tracking-wider flex justify-between items-center"
         >
-          👥 Lista de Chamada
+          <span>👥 Lista de Chamada</span>
+          <span class="bg-indigo-100 text-indigo-800 text-xs px-2.5 py-0.5 rounded-full font-bold">
+            {{ alunos_em_sala.count }}
+          </span>
         </h2>
 
         <div class="flex-1 overflow-y-auto mt-4 space-y-1.5 max-h-[450px] pr-1">
@@ -189,10 +233,12 @@
                 class="font-mono text-xs font-bold text-gray-400 w-5 text-right"
                 >{{ aluno.numero_chamada }}</span
               >
-              <span
-                class="text-sm font-medium text-gray-700 truncate max-w-[180px] md:max-w-[220px]"
-                >{{ aluno.nome }}</span
-              >
+              <div>
+                <span class="text-sm font-medium text-gray-700 block truncate max-w-[150px] md:max-w-[180px]">
+                  {{ aluno.nome }}
+                </span>
+                <small class="text-gray-400 text-[10px] block">{{ aluno.turma.nome_turma }}</small>
+              </div>
             </div>
 
             <a
@@ -202,25 +248,35 @@
               Solicitar Saída
             </a>
           </div>
+          {% empty %}
+          <div class="text-center py-12 text-gray-400 text-sm italic">
+            Nenhum aluno ativo nesta listagem.
+          </div>
           {% endfor %}
         </div>
       </section>
     </main>
 
     <footer
-      class="bg-white border-t border-gray-200 px-6 py-4 mt-auto flex justify-center gap-4"
+      class="bg-white border-t border-gray-200 px-6 py-4 mt-auto flex flex-col sm:flex-row justify-center items-center gap-4"
     >
       <a
         href="{% url 'relatorio_analitico' %}"
-        class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs px-5 py-2.5 rounded-lg border border-indigo-200 transition duration-150"
+        class="w-full sm:w-auto text-center bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs px-5 py-2.5 rounded-lg border border-indigo-200 transition duration-150"
       >
         📊 Ver Gráficos e Métricas
       </a>
       <a
         href="{% url 'exportar_excel' %}"
-        class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-xs px-5 py-2.5 rounded-lg border border-emerald-200 transition duration-150"
+        class="w-full sm:w-auto text-center bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-xs px-5 py-2.5 rounded-lg border border-emerald-200 transition duration-150"
       >
         📥 Exportar para Excel (.XLSX)
+      </a>
+      <a
+        href="{% url 'importar_csv' %}"
+        class="w-full sm:w-auto text-center bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs px-5 py-2.5 rounded-lg border border-slate-300 transition duration-150"
+      >
+        📂 Importar Novo CSV
       </a>
     </footer>
   </body>

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Importar Alunos - CSV</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body class="bg-gray-100 p-6 min-h-screen flex items-center justify-center">
+    <div
+      class="max-w-md w-full bg-white rounded-xl shadow-md border border-gray-200 p-6"
+    >
+      <div class="flex justify-between items-center border-b pb-4 mb-6">
+        <div>
+          <h1 class="text-lg font-bold text-gray-800">
+            📥 Importador de Alunos
+          </h1>
+          <p class="text-xs text-gray-500">
+            Suba o arquivo da lista de classe da SED
+          </p>
+        </div>
+        <a href="/" class="text-xs bg-slate-600 hover:bg-slate-700 text-white py-1.5 px-3 rounded-lg font-bold transition-colors">
+            Voltar
+        </a>
+          Voltar
+        </a>
+      </div>
+
+      {% if messages %} {% for msg in messages %}
+      <div
+        class="p-3 mb-4 rounded-lg text-xs font-semibold {% if msg.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}"
+      >
+        {{ msg }}
+      </div>
+      {% endfor %} {% endif %}
+
+      <form method="POST" enctype="multipart/form-data" class="space-y-4">
+        {% csrf_token %}
+
+        <div>
+          <label class="block text-xs font-bold text-gray-700 uppercase mb-1"
+            >Nome da Escola:</label
+          >
+          <input
+            type="text"
+            name="nome_escola"
+            required
+            placeholder="Ex: EE Maria da Penha Frugolli"
+            class="w-full bg-white border border-gray-300 rounded-lg p-2 text-sm text-gray-700 focus:outline-none focus:border-blue-500"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-700 uppercase mb-1"
+            >Identificação da Turma:</label
+          >
+          <input
+            type="text"
+            name="nome_turma"
+            required
+            placeholder="Ex: 3º Ano C"
+            class="w-full bg-white border border-gray-300 rounded-lg p-2 text-sm text-gray-700 focus:outline-none focus:border-blue-500"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-700 uppercase mb-1"
+            >Arquivo CSV da Turma:</label
+          >
+          <div
+            class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:bg-gray-50 transition-colors"
+          >
+            <div class="space-y-1 text-center">
+              <svg
+                class="mx-auto h-12 w-12 text-gray-400"
+                stroke="currentColor"
+                fill="none"
+                viewBox="0 0 48 48"
+                aria-hidden="true"
+              >
+                <path
+                  d="M28 8H12a4 4 0 00-4 4v20a4 4 0 004 4h24a4 4 0 004-4V20L28 8z"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M28 8v12h12"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <div class="flex text-sm text-gray-600 justify-center">
+                <label
+                  for="arquivo_csv"
+                  class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none"
+                >
+                  <span>Selecionar arquivo</span>
+                  <input
+                    id="arquivo_csv"
+                    name="arquivo_csv"
+                    type="file"
+                    accept=".csv"
+                    required
+                    class="sr-only"
+                  />
+                </label>
+              </div>
+              <p id="file-name" class="text-xs text-gray-400">
+                Apenas arquivos .csv da lista da SED
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg text-sm shadow transition-colors"
+        >
+          Processar e Popular Banco
+        </button>
+      </form>
+    </div>
+
+    <script>
+      document
+        .getElementById("arquivo_csv")
+        .addEventListener("change", function (e) {
+          const fileName = e.target.files[0]
+            ? e.target.files[0].name
+            : "Apenas arquivos .csv da lista da SED";
+          document.getElementById("file-name").textContent = fileName;
+          document.getElementById("file-name").className =
+            "text-xs text-green-600 font-medium";
+        });
+    </script>
+  </body>
+</html>

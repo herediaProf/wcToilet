@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Relatório Analítico de Saídas</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body class="bg-gray-100 p-6 min-h-screen">
-    <div
-      class="max-w-4xl mx-auto bg-white rounded-xl shadow-md border border-gray-200 p-6"
-    >
+    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md border border-gray-200 p-6">
+      
       <div class="flex justify-between items-center border-b pb-4 mb-6">
         <div>
           <h1 class="text-xl font-bold text-gray-800">
@@ -21,18 +21,80 @@
         </div>
         <a
           href="{% url 'dashboard' %}"
-          class="bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs py-2 px-4 rounded-lg"
+          class="bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs py-2 px-4 rounded-lg transition-colors"
         >
           Voltar ao Painel
         </a>
       </div>
 
+      <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6">
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          
+          <div>
+            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Turma:</label>
+            <select name="turma_id" onchange="this.form.submit()" class="w-full bg-white border border-gray-300 rounded-lg p-2 text-sm text-gray-700 focus:outline-none focus:border-blue-500">
+              <option value="">-- Todas --</option>
+              {% for t in turmas %}
+                <option value="{{ t.id }}" {% if turma_id == t.id|stringformat:"s" %}selected{% endif %}>{{ t.nome_turma }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Buscar Aluno:</label>
+            <div class="flex gap-2">
+              <input 
+                type="text" 
+                name="busca_aluno" 
+                value="{{ busca_aluno }}" 
+                placeholder="Nome, RA ou Nº chamada..." 
+                class="w-full bg-white border border-gray-300 rounded-lg p-2 text-sm text-gray-700 focus:outline-none focus:border-blue-500"
+              />
+              <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 rounded-lg transition-colors">
+                Buscar
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Período:</label>
+            <select name="periodo" onchange="this.form.submit()" class="w-full bg-white border border-gray-300 rounded-lg p-2 text-sm text-gray-700 focus:outline-none focus:border-blue-500">
+              <option value="dia" {% if periodo_agrupamento == 'dia' %}selected{% endif %}>Diário</option>
+              <option value="mes" {% if periodo_agrupamento == 'mes' %}selected{% endif %}>Mensal</option>
+              <option value="bimestre" {% if periodo_agrupamento == 'bimestre' %}selected{% endif %}>Bimestral</option>
+              <option value="semestre" {% if periodo_agrupamento == 'semestre' %}selected{% endif %}>Semestral</option>
+            </select>
+          </div>
+
+        </form>
+        
+        {% if busca_aluno or turma_id %}
+          <div class="mt-2 text-right">
+            <a href="?" class="text-xs text-red-500 hover:underline font-medium">✖ Limpar filtros e pesquisa</a>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <h3 class="text-xs font-bold text-gray-700 uppercase border-b pb-2 mb-3">Ranking de Frequência (Top 10)</h3>
+          <div class="relative w-full h-64">
+            <canvas id="chartBarrasAlunos"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <h3 class="text-xs font-bold text-gray-700 uppercase border-b pb-2 mb-3">Fluxo Acumulado no Período</h3>
+          <div class="relative w-full h-64">
+            <canvas id="chartLinhaTempo"></canvas>
+          </div>
+        </div>
+      </div>
+
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
-            <tr
-              class="bg-slate-50 border-b border-gray-200 text-slate-700 text-xs uppercase font-bold"
-            >
+            <tr class="bg-slate-50 border-b border-gray-200 text-slate-700 text-xs uppercase font-bold">
               <th class="p-3">Nº</th>
               <th class="p-3">Nome do Aluno</th>
               <th class="p-3 text-center">Total de Saídas</th>
@@ -41,30 +103,83 @@
           </thead>
           <tbody class="divide-y divide-gray-100 text-sm text-gray-700">
             {% for item in ranking_saidas %}
-            <tr class="hover:bg-slate-50">
+            <tr class="hover:bg-slate-50 transition-colors">
               <td class="p-3 font-mono font-bold text-gray-400">
                 {{ item.numero_chamada }}
               </td>
-              <td class="p-3 font-medium text-gray-900">{{ item.nome }}</td>
+              <td class="p-3 font-medium text-gray-900">
+                <a href="?busca_aluno={{ item.nome }}" class="hover:text-blue-600 hover:underline cursor-pointer">
+                  {{ item.nome }}
+                </a>
+              </td>
               <td class="p-3 text-center font-bold text-blue-600">
                 {{ item.total_saidas }}
               </td>
-              <td
-                class="p-3 text-center font-mono {% if item.tempo_total > 15 %}text-red-600 font-bold{% endif %}"
-              >
+              <td class="p-3 text-center font-mono {% if item.tempo_total > 15 %}text-red-600 font-bold{% endif %}">
                 {{ item.tempo_total|default:0 }} min
               </td>
             </tr>
             {% empty %}
             <tr>
               <td colspan="4" class="text-center py-8 text-gray-400 italic">
-                Nenhum registo computado até ao momento.
+                Nenhum registo computado correspondente aos filtros.
               </td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
+
     </div>
+
+    <script>
+      // 1. Gráfico de Barras: Frequência de Saídas por Aluno
+      const ctxBarras = document.getElementById('chartBarrasAlunos').getContext('2d');
+      new Chart(ctxBarras, {
+          type: 'bar',
+          data: {
+              labels: {{ chart_alunos_labels|safe }},
+              datasets: [{
+                  label: 'Saídas',
+                  data: {{ chart_alunos_valores|safe }},
+                  backgroundColor: 'rgba(59, 130, 246, 0.7)', // Azul padrão do Tailwind (blue-500)
+                  borderColor: 'rgba(37, 99, 235, 1)',
+                  borderWidth: 1,
+                  borderRadius: 6
+              }]
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+              plugins: { legend: { display: false } }
+          }
+      });
+
+      // 2. Gráfico de Linha: Histórico Temporal (Fluxo acumulado)
+      const ctxLinha = document.getElementById('chartLinhaTempo').getContext('2d');
+      new Chart(ctxLinha, {
+          type: 'line',
+          data: {
+              labels: {{ chart_tempo_labels|safe }},
+              datasets: [{
+                  label: 'Acessos',
+                  data: {{ chart_tempo_valores|safe }},
+                  borderColor: 'rgba(16, 185, 129, 1)', // Verde padrão do Tailwind (emerald-500)
+                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                  fill: true,
+                  tension: 0.2,
+                  borderWidth: 2,
+                  pointBackgroundColor: 'rgba(16, 185, 129, 1)'
+              }]
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+              plugins: { legend: { display: false } }
+          }
+      });
+    </script>
   </body>
 </html>

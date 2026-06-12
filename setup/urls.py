@@ -20,5 +20,8 @@ from django.urls import path, include
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("", include("controle_banheiro.urls")),  # Inclui as rotas do nosso app na raiz
+    # Adiciona caminhos padrão de autenticação do Django (Ex: accounts/login/)
+    path("accounts/", include("django.contrib.auth.urls")),
+    # Inclui as rotas do nosso app na raiz
+    path("", include("controle_banheiro.urls")),
 ]
