@@ -16,9 +16,24 @@ SECRET_KEY = os.environ.get(
 # Se a variável DEBUG não estiver definida no ambiente, assume True (local)
 DEBUG = os.environ.get("DEBUG", "True") == "True"
 
-ALLOWED_HOSTS = ["*"]
+# Garanta que o link do Railway está nos hosts permitidos
+ALLOWED_HOSTS = [
+    "wctoilet-production.up.railway.app",
+    "127.0.0.1",
+    "localhost",
+    "*.up.railway.app",  # Coringa para aceitar subdomínios do Railway
+]
 
-CSRF_TRUSTED_ORIGINS = ["http://*", "https://*"]
+# Configuração crucial para proxies como o Railway entenderem o HTTPS de ponta a ponta
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Variações explícitas exigidas pelo mecanismo de CSRF do Django em produção
+CSRF_TRUSTED_ORIGINS = [
+    "https://wctoilet-production.up.railway.app",
+    "https://*.up.railway.app",
+    "http://127.0.0.1",
+    "http://localhost",
+]
 
 # Application definition
 INSTALLED_APPS = [
@@ -113,3 +128,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGIN_REDIRECT_URL = "dashboard"
 LOGOUT_REDIRECT_URL = "login"
+
+
+# Se estiver no Railway (Produção), força os cookies a trafegarem apenas via HTTPS
+if not DEBUG:
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
